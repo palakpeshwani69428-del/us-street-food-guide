@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>United States Street Food Guide — 20 Iconic Dishes</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FDF6EC;
+    --warm-white: #FFFBF5;
+    --rust: #C0392B;
+    --rust-dark: #96281B;
+    --rust-light: #E74C3C;
+    --amber: #E67E22;
+    --amber-light: #F39C12;
+    --gold: #D4A017;
+    --charcoal: #2C2C2C;
+    --dark-brown: #3D2B1F;
+    --medium-brown: #6B4226;
+    --text-muted: #7A6652;
+    --border: #E8D5C0;
+    --shadow: rgba(60,30,10,0.12);
+    --card-bg: #FFFFFF;
+    --panel-bg: #FDF6EC;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--dark-brown);
+    color: #fff;
+    padding: 0 28px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1000;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-icon { font-size: 28px; }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #fff;
+  }
+  .header-subtitle {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 300;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .header-badge {
+    background: var(--rust);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main-layout {
+    display: flex;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+  }
+
+  /* ── MAP PANEL ── */
+  .map-panel {
+    flex: 0 0 50%;
+    position: relative;
+    background: #e8e0d5;
+  }
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Map Legend */
+  .map-legend {
+    position: absolute;
+    bottom: 24px;
+    left: 16px;
+    background: rgba(255,251,245,0.97);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    z-index: 500;
+    box-shadow: 0 4px 16px var(--shadow);
+    min-width: 160px;
+  }
+  .map-legend h4 {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 11px;
+    color: var(--charcoal);
+    font-weight: 500;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  /* ── FOOD LIST PANEL ── */
+  .list-panel {
+    flex: 0 0 50%;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel-bg);
+    border-left: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  /* Search & Filter Bar */
+  .controls-bar {
+    padding: 16px 20px 12px;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .search-wrapper {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  #searchInput {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: 'Inter', sans-serif;
+    background: #fff;
+    color: var(--charcoal);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #searchInput:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(230,126,34,0.12);
+  }
+  #searchInput::placeholder { color: #B0A090; }
+
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+  }
+  .filter-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .filter-btn.active {
+    background: var(--rust);
+    border-color: var(--rust);
+    color: #fff;
+  }
+
+  /* Results count */
+  .results-count {
+    padding: 8px 20px 6px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+    background: var(--panel-bg);
+  }
+
+  /* Cards List */
+  .cards-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px 20px;
+    scroll-behavior: smooth;
+  }
+  .cards-list::-webkit-scrollbar { width: 5px; }
+  .cards-list::-webkit-scrollbar-track { background: transparent; }
+  .cards-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Food Card */
+  .food-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    margin-bottom: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    display: flex;
+    height: 130px;
+  }
+  .food-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--shadow);
+    border-color: var(--amber-light);
+  }
+  .food-card.highlighted {
+    border-color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(192,57,43,0.18), 0 8px 24px var(--shadow);
+    transform: translateY(-2px);
+  }
+
+  .card-image {
+    flex: 0 0 130px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s;
+  }
+  .food-card:hover .card-image img { transform: scale(1.06); }
+
+  .card-num {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(61,43,31,0.82);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0;
+  }
+
+  .card-body {
+    flex: 1;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+  }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark-brown);
+    line-height: 1.25;
+  }
+  .card-tag {
+    flex-shrink: 0;
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .card-desc {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+    margin: 5px 0;
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--medium-brown);
+    font-weight: 500;
+  }
+  .card-footer .pin-icon { font-size: 12px; }
+
+  /* No results */
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    display: none;
+  }
+  .no-results .emoji { font-size: 40px; margin-bottom: 12px; }
+  .no-results p { font-size: 14px; }
+
+  /* Category color map */
+  .tag-bbq { background: #FEF0E6; color: #C0392B; }
+  .tag-northeast { background: #EBF5FB; color: #1A5276; }
+  .tag-southern { background: #FEF9E7; color: #7D6608; }
+  .tag-tex-mex { background: #FDEDEC; color: #922B21; }
+  .tag-west-coast { background: #E8F8F5; color: #1E8449; }
+  .tag-midwest { background: #F4ECF7; color: #6C3483; }
+  .tag-seafood { background: #EBF5FB; color: #1F618D; }
+  .tag-hawaiian { background: #E8F8F5; color: #117A65; }
+  .tag-latin { background: #FEF5E7; color: #9A7D0A; }
+  .tag-pacific-nw { background: #E9F7EF; color: #1D6A39; }
+
+  /* Leaflet popup custom */
+  .leaflet-popup-content-wrapper {
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
+    border: none !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  .leaflet-popup-content { margin: 0 !important; }
+  .leaflet-popup-tip { background: #fff !important; }
+  .custom-popup {
+    padding: 14px 16px;
+    min-width: 180px;
+  }
+  .custom-popup .popup-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark-brown);
+    margin-bottom: 4px;
+  }
+  .custom-popup .popup-city {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .custom-popup .popup-tag {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Custom marker */
+  .custom-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 3px solid rgba(255,255,255,0.9);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .custom-marker:hover { transform: rotate(-45deg) scale(1.15); }
+  .custom-marker .marker-inner {
+    transform: rotate(45deg);
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .main-layout { flex-direction: column; height: auto; overflow: visible; }
+    .map-panel { flex: none; height: 380px; }
+    .list-panel { flex: none; height: auto; overflow: visible; border-left: none; border-top: 1px solid var(--border); }
+    .cards-list { overflow: visible; max-height: none; }
+    header { height: auto; padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+    .header-title { font-size: 18px; }
+  }
+  @media (max-width: 600px) {
+    .food-card { height: auto; flex-direction: column; }
+    .card-image { flex: none; height: 160px; width: 100%; }
+    .header-badge { display: none; }
+  }
+
+  /* Scroll animation */
+  @keyframes cardPulse {
+    0% { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(192,57,43,0); }
+    100% { box-shadow: 0 0 0 0 rgba(192,57,43,0); }
+  }
+  .food-card.pulse { animation: cardPulse 0.6s ease-out; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="header-icon">🍽️</span>
+    <div>
+      <div class="header-title">United States Street Food Guide</div>
+      <div class="header-subtitle">20 Iconic Dishes · From Coast to Coast</div>
+    </div>
+  </div>
+  <span class="header-badge">🗺️ Interactive Map</span>
+</header>
+
+<div class="main-layout">
+
+  <!-- MAP PANEL -->
+  <div class="map-panel">
+    <div id="map"></div>
+    <div class="map-legend">
+      <h4>Categories</h4>
+      <div class="legend-item"><div class="legend-dot" style="background:#C0392B"></div>BBQ</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1A5276"></div>Northeast</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#D4AC0D"></div>Southern</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E74C3C"></div>Tex-Mex / Latin</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1E8449"></div>West Coast</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6C3483"></div>Midwest</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1F618D"></div>Seafood</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#117A65"></div>Hawaiian</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1D6A39"></div>Pacific NW</div>
+    </div>
+  </div>
+
+  <!-- LIST PANEL -->
+  <div class="list-panel">
+    <div class="controls-bar">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search by dish, city, or description…" autocomplete="off">
+      </div>
+      <div class="filter-row" id="filterRow">
+        <button class="filter-btn active" data-cat="all">All 20</button>
+        <button class="filter-btn" data-cat="BBQ">BBQ</button>
+        <button class="filter-btn" data-cat="Northeast">Northeast</button>
+        <button class="filter-btn" data-cat="Southern">Southern</button>
+        <button class="filter-btn" data-cat="Tex-Mex">Tex-Mex</button>
+        <button class="filter-btn" data-cat="West Coast">West Coast</button>
+        <button class="filter-btn" data-cat="Midwest">Midwest</button>
+        <button class="filter-btn" data-cat="Seafood">Seafood</button>
+        <button class="filter-btn" data-cat="Hawaiian">Hawaiian</button>
+        <button class="filter-btn" data-cat="Pacific NW">Pacific NW</button>
+        <button class="filter-btn" data-cat="Latin">Latin</button>
+      </div>
+    </div>
+    <div class="results-count" id="resultsCount">Showing all 20 dishes</div>
+    <div class="cards-list" id="cardsList">
+      <!-- Cards injected by JS -->
+      <div class="no-results" id="noResults">
+        <div class="emoji">🍽️</div>
+        <p>No dishes match your search.<br>Try a different keyword or category.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const dishes = [
+  {
+    id: 1,
+    name: "NYC-Style Pizza Slice",
+    city: "New York, NY",
+    state: "New York",
+    lat: 40.7128, lng: -74.0060,
+    category: "Northeast",
+    tagClass: "tag-northeast",
+    emoji: "🍕",
+    desc: "The quintessential New York street food — a wide, foldable triangle of thin-crust pizza with tangy tomato sauce and stretchy mozzarella, sold by the slice from corner pizzerias. Born in the early 1900s from Italian immigrant traditions, the NYC slice is best eaten folded lengthwise while walking. Iconic spots like Di Fara and Scarr's have elevated it to an art form.",
+    image: "https://assets.bonappetit.com/photos/5a9dd6601580242556506b85/4:3/w_4024,h_3018,c_limit/pizza-slice-crimp.jpg"
+  },
+  {
+    id: 2,
+    name: "Philly Cheesesteak",
+    city: "Philadelphia, PA",
+    state: "Pennsylvania",
+    lat: 39.9526, lng: -75.1652,
+    category: "Northeast",
+    tagClass: "tag-northeast",
+    emoji: "🥩",
+    desc: "Thinly shaved ribeye steak, sautéed onions, and melted Cheez Whiz (or provolone) piled into a soft Amoroso hoagie roll — Philadelphia's most beloved sandwich. Born in 1930 at a South Philly hot dog stand, the cheesesteak has become a cultural institution. Pat's King of Steaks and Geno's Steaks face off on the same corner in a rivalry that's been going since 1966.",
+    image: "https://www.seriouseats.com/thmb/8qm3RZIJtc8AGX8M7N1Cw-A9g48=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/20230530-SEA-PhillyCheesesteak-AmandaSuarez-49-2f3fb63d50ac43a5a1bc8366ab64cdde.jpg"
+  },
+  {
+    id: 3,
+    name: "Chicago Deep Dish Pizza",
+    city: "Chicago, IL",
+    state: "Illinois",
+    lat: 41.8781, lng: -87.6298,
+    category: "Midwest",
+    tagClass: "tag-midwest",
+    emoji: "🍕",
+    desc: "Chicago's towering deep-dish pizza is more casserole than flatbread — a buttery, thick cornmeal crust pressed up the sides of a round pan, layered with chunky sausage, mozzarella, and a thick ladle of chunky tomato sauce on top. Invented at Pizzeria Uno in 1943, it's a knife-and-fork affair that takes 45 minutes to bake and a lifetime to forget.",
+    image: "https://www.foodandwine.com/thmb/zFoEb3fLoFy8xhJFx4_FB7XIslM=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/Deep-Dish-Pizza-FT-RECIPE0423-00da796ae0444f5792d484a9d200a414.jpg"
+  },
+  {
+    id: 4,
+    name: "New Orleans Po'Boy",
+    city: "New Orleans, LA",
+    state: "Louisiana",
+    lat: 29.9511, lng: -90.0715,
+    category: "Southern",
+    tagClass: "tag-southern",
+    emoji: "🥖",
+    desc: "A New Orleans institution since 1929, the po'boy is a long French bread sandwich stuffed with fried shrimp, oysters, roast beef, or catfish, then 'dressed' with lettuce, tomato, pickles, and remoulade. The name comes from feeding striking streetcar workers — the 'poor boys.' Leidenheimer's crusty French bread is non-negotiable; the crust shatters, the inside stays pillowy.",
+    image: "https://www.foodandwine.com/thmb/ZGd1Std_z1Z8yThqWOVf06XIXZQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/New-Orleans-BBQ-Shrimp-Po-Boy-FT-RECIPE0123-4d164e35c0364d25a2ae27a2c030ced1.jpg"
+  },
+  {
+    id: 5,
+    name: "Texas Smoked Brisket",
+    city: "Austin, TX",
+    state: "Texas",
+    lat: 30.2672, lng: -97.7431,
+    category: "BBQ",
+    tagClass: "tag-bbq",
+    emoji: "🥩",
+    desc: "Central Texas BBQ brisket is a religion — beef packer brisket rubbed with only salt and black pepper, then smoked low and slow over post oak for 12–18 hours until a mahogany bark forms and the fat renders into silky, trembling slices. Served on butcher paper with white bread, pickles, and onions at legendary pits like Franklin Barbecue, where lines form before dawn.",
+    image: "https://houseofyumm.com/wp-content/uploads/2021/05/Brisket-7.webp"
+  },
+  {
+    id: 6,
+    name: "LA Street Tacos",
+    city: "Los Angeles, CA",
+    state: "California",
+    lat: 34.0522, lng: -118.2437,
+    category: "Tex-Mex",
+    tagClass: "tag-tex-mex",
+    emoji: "🌮",
+    desc: "Los Angeles street tacos are a direct line to Mexican culinary tradition — small double-stacked corn tortillas loaded with carne asada, al pastor, or carnitas, topped simply with diced white onion, fresh cilantro, and a squeeze of lime. LA's taco truck culture is legendary, with trucks like Mariscos Jalisco and Leo's Tacos serving some of the most authentic Mexican street food outside of Mexico.",
+    image: "https://ca-times.brightspotcdn.com/dims4/default/88176bb/2147483647/strip/true/crop/6399x4268+0+0/resize/1200x800!/quality/75/?url=https%3A%2F%2Fcalifornia-times-brightspot.s3.amazonaws.com%2F3e%2F27%2Fdd863c2b4e16b9c84d1043e49f3e%2F1464102-fo-101-tacos-top-picks-barbacoaramirez-021.jpg"
+  },
+  {
+    id: 7,
+    name: "Maine Lobster Roll",
+    city: "Portland, ME",
+    state: "Maine",
+    lat: 43.6591, lng: -70.2568,
+    category: "Seafood",
+    tagClass: "tag-seafood",
+    emoji: "🦞",
+    desc: "Maine's most celebrated sandwich is deceptively simple: sweet, cold chunks of fresh-picked lobster meat tossed lightly in mayonnaise (or drawn butter for the Connecticut style), piled into a split-top hot dog bun that's been buttered and toasted golden. The lobster must be fresh-caught from cold Maine waters — that's what gives it the sweet, briny flavor that no frozen substitute can replicate.",
+    image: "https://stripedspatula.com/wp-content/uploads/2018/07/lobster-rolls-8.jpg"
+  },
+  {
+    id: 8,
+    name: "Detroit Coney Dog",
+    city: "Detroit, MI",
+    state: "Michigan",
+    lat: 42.3314, lng: -83.0458,
+    category: "Midwest",
+    tagClass: "tag-midwest",
+    emoji: "🌭",
+    desc: "Detroit's Coney Dog is a natural-casing beef hot dog in a steamed bun, blanketed with a beanless, meaty chili sauce (the 'coney sauce'), topped with yellow mustard and a mound of finely diced raw onions. The rivalry between American Coney Island and Lafayette Coney Island — two legendary diners that share a wall in downtown Detroit — has been going since 1917 and remains deliciously unresolved.",
+    image: "https://www.allrecipes.com/thmb/ht4tSz1wQeR2fTarv2W15IRn-H8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/141138-detroit-style-coney-dogs-VAT-003-4x3-10dda83e6be14a4facfeccc165f7da97.jpg"
+  },
+  {
+    id: 9,
+    name: "Nashville Hot Chicken",
+    city: "Nashville, TN",
+    state: "Tennessee",
+    lat: 36.1627, lng: -86.7816,
+    category: "Southern",
+    tagClass: "tag-southern",
+    emoji: "🍗",
+    desc: "Nashville hot chicken is fried chicken taken to a fiery extreme — bone-in pieces dunked in a cayenne-heavy paste after frying, creating a blazing orange crust that delivers waves of heat. Served on white bread with dill pickle chips, it was invented at Prince's Hot Chicken Shack in the 1930s as an act of revenge that accidentally became a culinary legend. The heat levels range from 'mild' to 'shut the cluck up.'",
+    image: "https://assets.bonappetit.com/photos/66159bf9b637d0ed948a305d/4:3/w_2904,h_2178,c_limit/nashville-hot-chicken-hero.jpg"
+  },
+  {
+    id: 10,
+    name: "SF Mission Burrito",
+    city: "San Francisco, CA",
+    state: "California",
+    lat: 37.7599, lng: -122.4148,
+    category: "West Coast",
+    tagClass: "tag-west-coast",
+    emoji: "🌯",
+    desc: "The Mission-style burrito is a San Francisco original — a massive flour tortilla steamed to pliability, then stuffed with rice, beans, meat, sour cream, guacamole, salsa, and cheese, then tightly wrapped in foil. Born in the Mission District in the 1960s, it's a meal-in-one that weighs nearly a pound. La Taqueria and El Farolito are the neighborhood's most revered temples of the form.",
+    image: "https://www.seriouseats.com/thmb/7LUkXGhkz212LqnfZAkHSZYEyIs=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/20191002-san-francisco-burritos-TaqueriaGuadalejara-lori-eanes-9762fdae2ecd47e6927d51805760b1b1.jpg"
+  },
+  {
+    id: 11,
+    name: "Hawaiian Poke Bowl",
+    city: "Honolulu, HI",
+    state: "Hawaii",
+    lat: 21.3069, lng: -157.8583,
+    category: "Hawaiian",
+    tagClass: "tag-hawaiian",
+    emoji: "🐟",
+    desc: "Poke (pronounced poh-KAY) is Hawaii's beloved raw fish salad — cubed ahi tuna marinated in soy sauce, sesame oil, and green onions, served over steamed rice with toppings like avocado, edamame, cucumber, and tobiko. A staple at Hawaiian supermarkets and roadside stands long before it became a mainland trend, poke is deeply rooted in Native Hawaiian fishing culture and Japanese immigrant influence.",
+    image: "https://www.abeautifulplate.com/wp-content/uploads/2019/04/shoyu-ahi-poke-1-7.jpg"
+  },
+  {
+    id: 12,
+    name: "Kansas City Burnt Ends",
+    city: "Kansas City, MO",
+    state: "Missouri",
+    lat: 39.0997, lng: -94.5786,
+    category: "BBQ",
+    tagClass: "tag-bbq",
+    emoji: "🔥",
+    desc: "Burnt ends are the caramelized, twice-smoked cubes cut from the point end of a beef brisket — crispy on the outside, meltingly tender within, and lacquered in a sweet-smoky Kansas City-style sauce. Once considered scraps given away free at Arthur Bryant's, they became so beloved they're now the most prized item on any KC BBQ menu. Joe's Kansas City Bar-B-Que is widely considered the gold standard.",
+    image: "https://www.foodnetwork.com/content/dam/images/food/fullset/2013/8/13/0/FN_OTR-Burnt-Ends_s4x3.jpg"
+  },
+  {
+    id: 13,
+    name: "Memphis BBQ Ribs",
+    city: "Memphis, TN",
+    state: "Tennessee",
+    lat: 35.1495, lng: -90.0490,
+    category: "BBQ",
+    tagClass: "tag-bbq",
+    emoji: "🍖",
+    desc: "Memphis-style pork ribs are a study in restraint and smoke — dry-rubbed with a complex blend of paprika, garlic, and spices, then slow-smoked over hickory wood for hours until the meat pulls cleanly from the bone. Unlike saucy Kansas City ribs, Memphis 'dry ribs' let the smoke and rub do all the talking. The city hosts the World Championship Barbecue Cooking Contest every May, drawing 100,000+ visitors.",
+    image: "https://www.simplyrecipes.com/thmb/2mYdDm7DbE4FYRcKQsN-DXf6bPY=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/Simply-Recipes-Memphis-Style-Pork-Ribs-LEAD-1-8f8eb13cae6d4021bafa8bad72515257.JPG"
+  },
+  {
+    id: 14,
+    name: "Seattle Teriyaki",
+    city: "Seattle, WA",
+    state: "Washington",
+    lat: 47.6062, lng: -122.3321,
+    category: "Pacific NW",
+    tagClass: "tag-pacific-nw",
+    emoji: "🍱",
+    desc: "Seattle teriyaki is a uniquely Pacific Northwest phenomenon — boneless chicken thighs marinated in a sweet soy-ginger-garlic sauce, grilled over charcoal, and served over steamed white rice with a side salad. Brought by Japanese immigrants and popularized by Toshi Kasahara in the 1970s, Seattle now has more teriyaki restaurants per capita than any other American city. It's the city's true comfort food.",
+    image: "https://res.cloudinary.com/hksqkdlah/image/upload/c_fill,dpr_2.0,f_auto,fl_lossy.progressive.strip_profile,g_faces:auto,h_599,q_auto:low/SFS_SeattleChickenTeriyaki_71_2_lvlcgw"
+  },
+  {
+    id: 15,
+    name: "Portland Food Cart Pad Thai",
+    city: "Portland, OR",
+    state: "Oregon",
+    lat: 45.5051, lng: -122.6750,
+    category: "Pacific NW",
+    tagClass: "tag-pacific-nw",
+    emoji: "🍜",
+    desc: "Portland's legendary food cart pods have made the city a global street food destination, and Thai noodle dishes — particularly pad thai — are among the most beloved offerings. Wok-tossed rice noodles with egg, bean sprouts, green onions, and your choice of protein, finished with crushed peanuts and lime, emerge from tiny carts that rival full restaurants in quality. Portland's food cart culture is a model for cities worldwide.",
+    image: "https://res.cloudinary.com/sagacity/image/upload/c_crop,h_2851,w_3703,x_0,y_0/c_limit,dpr_auto,f_auto,fl_lossy,q_80,w_1080/Stretch_the_Noodle_dfxc4a.jpg"
+  },
+  {
+    id: 16,
+    name: "Miami Cuban Sandwich",
+    city: "Miami, FL",
+    state: "Florida",
+    lat: 25.7617, lng: -80.1918,
+    category: "Latin",
+    tagClass: "tag-latin",
+    emoji: "🥪",
+    desc: "The Cuban sandwich (Cubano) is Miami's most iconic bite — Cuban bread pressed flat and toasted until crackling, layered with slow-roasted mojo pork, glazed ham, Swiss cheese, yellow mustard, and dill pickles. The pressing is essential: it melts the cheese, melds the flavors, and creates that signature crispy-yet-chewy texture. Miami's Little Havana neighborhood has been perfecting this sandwich since Cuban immigrants arrived in the 1960s.",
+    image: "https://assets.bonappetit.com/photos/68a378e020d91c3d3958c907/16:9/w_2490,h_1401,c_limit/20250616_1025_TOTT_MIAMI_CUBAN%20SANDWICHES_06_Maria's%20Cafe%20and%20Coin%20Laundry_0200_FINAL.jpg"
+  },
+  {
+    id: 17,
+    name: "Charleston Shrimp & Grits",
+    city: "Charleston, SC",
+    state: "South Carolina",
+    lat: 32.7765, lng: -79.9311,
+    category: "Southern",
+    tagClass: "tag-southern",
+    emoji: "🍤",
+    desc: "Shrimp and grits is the soul of Lowcountry cooking — plump, sweet Atlantic shrimp sautéed with bacon, garlic, and a splash of white wine, served over a bowl of stone-ground white corn grits cooked with butter and sharp cheddar until they're silky and rich. Once a humble fisherman's breakfast, it was elevated to fine dining by Charleston chef Bill Neal in the 1980s and is now the city's signature dish.",
+    image: "https://www.allrecipes.com/thmb/12PbMDexBGTclyxGsuoHmlGTBnA=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/220895-old-charleston-style-shrimp-and-grits-VAT-009-4x3-B-b16f0abdc4aa40f4ac37e2efd6578889.jpg"
+  },
+  {
+    id: 18,
+    name: "Tucson Sonoran Hot Dog",
+    city: "Tucson, AZ",
+    state: "Arizona",
+    lat: 32.2226, lng: -110.9747,
+    category: "Tex-Mex",
+    tagClass: "tag-tex-mex",
+    emoji: "🌭",
+    desc: "The Sonoran hot dog is a Tucson original born from the Sonora region of Mexico — a beef hot dog wrapped in bacon and grilled until the bacon crisps, then nestled in a soft bolillo-style bun and topped with pinto beans, diced tomatoes, onions, mayonnaise, mustard, and a drizzle of jalapeño salsa. It's a cross-border culinary masterpiece sold from carts and small stands throughout Tucson's South Side.",
+    image: "https://www.foodandwine.com/thmb/7u_eEh3s31BJkRok_NhYDDXwIT8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/Sonoran-Hot-Dog-FT-RECIPE0624-400e0796e0c2483db4fb057d7d59ada6.jpg"
+  },
+  {
+    id: 19,
+    name: "Milwaukee Cheese Curds",
+    city: "Milwaukee, WI",
+    state: "Wisconsin",
+    lat: 43.0389, lng: -87.9065,
+    category: "Midwest",
+    tagClass: "tag-midwest",
+    emoji: "🧀",
+    desc: "Wisconsin cheese curds are fresh, squeaky young cheddar curds — either eaten raw (they should squeak against your teeth) or battered in a light beer batter and deep-fried until golden and molten inside. A staple at Wisconsin State Fair, Summerfest, and every Milwaukee tavern, they represent the state's dairy pride. The best curds are made same-day at local creameries; freshness is everything.",
+    image: "https://www.milwaukeemag.com/wp-content/uploads/2023/11/Sun-Dried-Tomato-Cheese-Curds-1.jpeg"
+  },
+  {
+    id: 20,
+    name: "New England Clam Chowder",
+    city: "Boston, MA",
+    state: "Massachusetts",
+    lat: 42.3601, lng: -71.0589,
+    category: "Seafood",
+    tagClass: "tag-seafood",
+    emoji: "🍲",
+    desc: "New England clam chowder is the Northeast's most comforting bowl — a thick, cream-based soup loaded with tender chopped clams, diced potatoes, smoky bacon, and onions, seasoned with thyme and a bay leaf. In Boston, it's traditionally served in a hollowed-out sourdough bread bowl, which soaks up the chowder as you eat. Legal Sea Foods and Faneuil Hall's Union Oyster House have been serving legendary versions for decades.",
+    image: "https://www.crumbsnatched.com/wp-content/uploads/2022/05/clam-chowder-bread-bowl-featured.jpg"
+  }
+];
+
+// ── CATEGORY COLOR MAP ────────────────────────────────────────────────────────
+const catColors = {
+  "BBQ":       "#C0392B",
+  "Northeast": "#1A5276",
+  "Southern":  "#D4AC0D",
+  "Tex-Mex":   "#E74C3C",
+  "West Coast":"#1E8449",
+  "Midwest":   "#6C3483",
+  "Seafood":   "#1F618D",
+  "Hawaiian":  "#117A65",
+  "Latin":     "#9A7D0A",
+  "Pacific NW":"#1D6A39"
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let activeFilter = "all";
+let searchQuery = "";
+let markers = {};
+let map;
+
+// ── INIT MAP ──────────────────────────────────────────────────────────────────
+function initMap() {
+  map = L.map('map', {
+    center: [38.5, -96.5],
+    zoom: 4,
+    zoomControl: true,
+    scrollWheelZoom: true
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  dishes.forEach(dish => {
+    const color = catColors[dish.category] || "#888";
+
+    const markerHtml = `
+      <div style="
+        width:34px;height:34px;
+        background:${color};
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        border:3px solid rgba(255,255,255,0.92);
+        box-shadow:0 3px 10px rgba(0,0,0,0.35);
+        display:flex;align-items:center;justify-content:center;
+        cursor:pointer;
+      ">
+        <span style="transform:rotate(45deg);font-size:14px;line-height:1;">${dish.emoji}</span>
+      </div>`;
+
+    const icon = L.divIcon({
+      html: markerHtml,
+      className: '',
+      iconSize: [34, 34],
+      iconAnchor: [17, 34],
+      popupAnchor: [0, -36]
+    });
+
+    const popupContent = `
+      <div class="custom-popup">
+        <div class="popup-name">${dish.emoji} ${dish.name}</div>
+        <div class="popup-city">📍 ${dish.city}</div>
+        <span class="popup-tag ${dish.tagClass}">${dish.category}</span>
+      </div>`;
+
+    const marker = L.marker([dish.lat, dish.lng], { icon })
+      .addTo(map)
+      .bindPopup(popupContent, { maxWidth: 220, minWidth: 180 });
+
+    marker.on('click', () => {
+      scrollToCard(dish.id);
+      highlightCard(dish.id);
+    });
+
+    markers[dish.id] = marker;
+  });
+}
+
+// ── RENDER CARDS ──────────────────────────────────────────────────────────────
+function renderCards() {
+  const list = document.getElementById('cardsList');
+  const noResults = document.getElementById('noResults');
+  const countEl = document.getElementById('resultsCount');
+
+  const filtered = dishes.filter(d => {
+    const matchCat = activeFilter === "all" || d.category === activeFilter;
+    const q = searchQuery.toLowerCase();
+    const matchSearch = !q ||
+      d.name.toLowerCase().includes(q) ||
+      d.city.toLowerCase().includes(q) ||
+      d.desc.toLowerCase().includes(q) ||
+      d.category.toLowerCase().includes(q) ||
+      d.state.toLowerCase().includes(q);
+    return matchCat && matchSearch;
+  });
+
+  // Remove existing cards (keep noResults div)
+  Array.from(list.querySelectorAll('.food-card')).forEach(c => c.remove());
+
+  if (filtered.length === 0) {
+    noResults.style.display = 'block';
+    countEl.textContent = 'No dishes found';
+    return;
+  }
+  noResults.style.display = 'none';
+  countEl.textContent = filtered.length === 20
+    ? 'Showing all 20 dishes'
+    : `Showing ${filtered.length} of 20 dishes`;
+
+  filtered.forEach(dish => {
+    const card = document.createElement('div');
+    card.className = 'food-card';
+    card.id = `card-${dish.id}`;
+    card.innerHTML = `
+      <div class="card-image">
+        <img src="${dish.image}" alt="${dish.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80'">
+        <div class="card-num">${dish.id}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-name">${dish.name}</div>
+          <span class="card-tag ${dish.tagClass}">${dish.category}</span>
+        </div>
+        <div class="card-desc">${dish.desc}</div>
+        <div class="card-footer">
+          <span class="pin-icon">📍</span>
+          <span>${dish.city}</span>
+        </div>
+      </div>`;
+
+    card.addEventListener('click', () => {
+      panToMarker(dish.id);
+      highlightCard(dish.id);
+    });
+
+    list.insertBefore(card, noResults);
+  });
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+function highlightCard(id) {
+  document.querySelectorAll('.food-card').forEach(c => {
+    c.classList.remove('highlighted', 'pulse');
+  });
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.classList.add('highlighted');
+    void card.offsetWidth; // reflow for animation restart
+    card.classList.add('pulse');
+  }
+}
+
+function scrollToCard(id) {
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function panToMarker(id) {
+  const dish = dishes.find(d => d.id === id);
+  const marker = markers[id];
+  if (dish && marker) {
+    map.flyTo([dish.lat, dish.lng], 7, { duration: 0.8 });
+    setTimeout(() => marker.openPopup(), 850);
+  }
+}
+
+// ── SEARCH ────────────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', function() {
+  searchQuery = this.value.trim();
+  renderCards();
+});
+
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+document.getElementById('filterRow').addEventListener('click', function(e) {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter = btn.dataset.cat;
+  renderCards();
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+initMap();
+renderCards();
+</script>
+</body>
+</html>
