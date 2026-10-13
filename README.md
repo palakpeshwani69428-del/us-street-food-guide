@@ -2,7 +2,7 @@
 
 An interactive, single-file web guide to **20 iconic American street foods** — from a folded NYC pizza slice to a Tucson Sonoran hot dog. Explore every dish on a live map, filter by region, and search by name, city, or description.
 
-![United States Street Food Guide](https://raw.githubusercontent.com/palakpeshwani69428-del/us-street-food-guide/main/index.html)
+> **Live demo:** https://palakpeshwani69428-del.github.io/us-street-food-guide/
 
 ## ✨ Features
 
